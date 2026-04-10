@@ -235,6 +235,7 @@ jQuery( document ).ready( function( $ ) {
 			var data = {
 				action:         'dk_speakout_sendmail',
 				id:             id,
+				dk_speakout_share_url: window.location.href.split( '#' )[0],
 				honorific:		honorific,
 				first_name:     firstname,
 				last_name:      lastname,

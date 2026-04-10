@@ -171,12 +171,45 @@ class dk_speakout_Mail
         }
 	}
 
+	/**
+	 * Public petition page URL for thank-you / share links.
+	 * During admin-ajax.php handling, $_SERVER['REQUEST_URI'] is the AJAX endpoint, not the petition page.
+	 */
+	private static function resolve_petition_share_url() {
+		if ( ! empty( $_POST['dk_speakout_share_url'] ) ) {
+			$candidate = esc_url_raw( wp_unslash( $_POST['dk_speakout_share_url'] ) );
+			$validated = wp_validate_redirect( $candidate, false );
+			if ( $validated ) {
+				return $validated;
+			}
+		}
+		$referer = wp_get_referer();
+		if ( $referer ) {
+			$path = (string) wp_parse_url( $referer, PHP_URL_PATH );
+			if ( $path && false === strpos( $path, 'admin-ajax.php' ) ) {
+				$validated = wp_validate_redirect( $referer, false );
+				if ( $validated ) {
+					return $validated;
+				}
+			}
+		}
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		if ( $uri && false === strpos( $uri, 'admin-ajax.php' ) ) {
+			$candidate = home_url( add_query_arg( array(), $uri ) );
+			$validated = wp_validate_redirect( $candidate, false );
+			if ( $validated ) {
+				return $validated;
+			}
+		}
+		return home_url( '/' );
+	}
+
 	public static function send_thank_you( $petition, $signature, $options ) {
 		if ( empty( $signature->email ) ) {
 			return;
 		}
 		$subject = sprintf( __( 'Thanks for signing: %s', 'speakout' ), stripslashes( $petition->title ) );
-		$share_url = home_url( add_query_arg( array(), $_SERVER['REQUEST_URI'] ) );
+		$share_url = self::resolve_petition_share_url();
 		$manage_url = home_url( '/?dkspeakoutmanage=' . rawurlencode( $signature->confirmation_code ) . '&email=' . rawurlencode( $signature->email ) );
 		$message  = '<p><strong>' . esc_html__( 'Thank you for taking action.', 'speakout' ) . '</strong></p>';
 		$message .= '<p>' . esc_html__( 'Your signature has been recorded.', 'speakout' ) . '</p>';

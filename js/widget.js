@@ -76,6 +76,12 @@ jQuery( document ).ready( function( $ ) {
 			if ( share_url === '' ) {
 				share_url = current_url.split('#')[0];
 			}
+			var shareUrlForEmail = share_url;
+			try {
+				shareUrlForEmail = decodeURIComponent( share_url );
+			} catch ( err ) {
+				shareUrlForEmail = share_url;
+			}
 
 			if ( $( '#dk-speakout-widget-optin-' + id ).attr( 'checked' ) ) {
 				optin = 1;
@@ -122,6 +128,7 @@ jQuery( document ).ready( function( $ ) {
 				var data = {
 					action:         'dk_speakout_sendmail',
 					id:             id,
+					dk_speakout_share_url: shareUrlForEmail,
 					honorific:		honorific,
 					first_name:     firstname,
 					last_name:      lastname,
