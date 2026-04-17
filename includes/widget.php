@@ -8,7 +8,6 @@ function dk_speakout_register_widgets() {
 class dk_speakout_petition_widget extends WP_Widget {
 
 	function __construct() {
-    global $dk_speakout_version;
 		$widget_ops = array(
 			'classname'   => 'dk_speakout_widget',
 			'description' => __( 'Display a petition form.', 'speakout' )
@@ -19,7 +18,7 @@ class dk_speakout_petition_widget extends WP_Widget {
 		if ( ! is_admin() && is_active_widget( false, false, $this->id_base, true ) ) {
 
 			// load the JavaScript
-			wp_enqueue_script( 'dk_speakout_widget_js', plugins_url( 'js/widget.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ),  $dk_speakout_version );
+			wp_enqueue_script( 'dk_speakout_widget_js', plugins_url( 'js/widget.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ),  dk_speakout_asset_version() );
 
 			// load the CSS theme
 			$options = get_option( 'dk_speakout_options' );
@@ -27,7 +26,7 @@ class dk_speakout_petition_widget extends WP_Widget {
 
 			 // load default theme
 			if ( $theme === 'default' ) {
-				wp_enqueue_style( 'dk_speakout_widget_css', plugins_url( 'css/widget.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), $dk_speakout_version );
+				wp_enqueue_style( 'dk_speakout_widget_css', plugins_url( 'css/widget.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), dk_speakout_asset_version() );
 			}
 			// attempt to load cusom theme (petition-widget.css)
 			else {
@@ -43,16 +42,16 @@ class dk_speakout_petition_widget extends WP_Widget {
 
 					// use child theme if it exists
 					if ( file_exists( $child_theme_path ) ) {
-						wp_enqueue_style( 'dk_speakout_widget_css', $child_theme_url, array(), $dk_speakout_version );
+						wp_enqueue_style( 'dk_speakout_widget_css', $child_theme_url, array(), dk_speakout_asset_version() );
 					}
 					// else try to load style from parent theme folder
 					else {
-						wp_enqueue_style( 'dk_speakout_widget_css', $parent_theme_url, array(), $dk_speakout_version );
+						wp_enqueue_style( 'dk_speakout_widget_css', $parent_theme_url, array(), dk_speakout_asset_version() );
 					}
 				}
 				// if not using a child theme, just try to load style from active theme folder
 				else {
-					wp_enqueue_style( 'dk_speakout_widget_css', $parent_theme_url, array(), $dk_speakout_version );
+					wp_enqueue_style( 'dk_speakout_widget_css', $parent_theme_url, array(), dk_speakout_asset_version() );
 				}
 			}
 

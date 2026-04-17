@@ -94,10 +94,10 @@ function dk_speakout_menu_icon() {
 add_action( 'admin_print_scripts', 'dk_speakout_admin_js' );
 
 function dk_speakout_admin_js() {
-	global $parent_file, $dk_speakout_version;
+	global $parent_file;
 
 	if ( $parent_file == 'dk_speakout_top' ) {
-		wp_enqueue_script( 'dk_speakout_admin_js', plugins_url( 'js/admin.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ) , $dk_speakout_version );
+		wp_enqueue_script( 'dk_speakout_admin_js', plugins_url( 'js/admin.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ) , dk_speakout_asset_version() );
 	}
 }
 
@@ -105,10 +105,10 @@ function dk_speakout_admin_js() {
 add_action( 'admin_print_styles', 'dk_speakout_admin_css' );
 
 function dk_speakout_admin_css() {
-	global $parent_file, $dk_speakout_version ;
+	global $parent_file;
 
 	if ( $parent_file == 'dk_speakout_top' ) {
-		wp_enqueue_style( 'dk_speakout_admin_css', plugins_url( 'css/admin.css', DK_SPEAKOUT_PLUGIN_FILE ) ,"", $dk_speakout_version );
+		wp_enqueue_style( 'dk_speakout_admin_css', plugins_url( 'css/admin.css', DK_SPEAKOUT_PLUGIN_FILE ) ,"", dk_speakout_asset_version() );
 	}
 }
 ?>

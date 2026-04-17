@@ -802,7 +802,6 @@ function dk_speakout_signaturemanage_shortcode() {
 add_filter( 'the_posts', 'dk_speakout_public_css_js' );
 
 function dk_speakout_public_css_js( $posts ) {
-    global $dk_speakout_version;
     if ( empty( $posts ) ) return $posts;
 
     $options = get_option( 'dk_speakout_options' );
@@ -821,10 +820,10 @@ function dk_speakout_public_css_js( $posts ) {
 
         switch ( $theme ) {
             case 'default':
-                wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-default.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), $dk_speakout_version );
+                wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-default.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), dk_speakout_asset_version() );
                 break;
             case 'basic':
-                wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-basic.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), $dk_speakout_version );
+                wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-basic.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), dk_speakout_asset_version() );
                 break;
             case 'none':
                 $parent_dir = get_template_directory_uri();
@@ -839,16 +838,16 @@ function dk_speakout_public_css_js( $posts ) {
 
                     // use child theme if it exists
                     if ( file_exists( $child_petition_theme_path ) ) {
-                        wp_enqueue_style( 'dk_speakout_css', $child_petition_theme_url, array(), $dk_speakout_version );
+                        wp_enqueue_style( 'dk_speakout_css', $child_petition_theme_url, array(), dk_speakout_asset_version() );
                     }
                     // else try to load style from parent theme folder
                     else {
-                        wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), $dk_speakout_version );
+                        wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), dk_speakout_asset_version() );
                     }
                 }
                 // try to load style from active theme folder
                 else {
-                    wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), $dk_speakout_version );
+                    wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), dk_speakout_asset_version() );
                 }
                 break;
         }
@@ -858,13 +857,13 @@ function dk_speakout_public_css_js( $posts ) {
         $params = array( 'ajaxurl' => admin_url( 'admin-ajax.php', $protocol ) );
         $params['manage_nonce'] = wp_create_nonce( 'dk_speakout_manage_signature' );
         if ( isset( $options[ 'g_recaptcha_status' ] ) && $options[ 'g_recaptcha_status' ] == "on" ) {
-            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-gr.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), $dk_speakout_version );
+            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-gr.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), dk_speakout_asset_version() );
         } 
         elseif ( isset( $options[ 'hcaptcha_status' ] ) && $options[ 'hcaptcha_status' ] == "on" ) {
-            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-h.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), $dk_speakout_version );
+            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-h.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), dk_speakout_asset_version() );
         }
         else {
-            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), $dk_speakout_version );
+            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), dk_speakout_asset_version() );
         }
         wp_enqueue_script( 'jquery-effects-highlight' );
         wp_localize_script( 'dk_speakout_js', 'dk_speakout_js', $params );

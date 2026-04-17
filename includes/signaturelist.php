@@ -4,7 +4,6 @@
 add_shortcode( 'signaturelist', 'dk_speakout_signatures_shortcode' );
 
 function dk_speakout_signatures_shortcode( $attr ) {
-global  $dk_speakout_version;
 
     include_once( 'class.petition.php' );
     $petition = new dk_speakout_Petition();
@@ -56,7 +55,7 @@ global  $dk_speakout_version;
 		'ajaxurl'    => admin_url( 'admin-ajax.php', $protocol ),
 		'dateformat' => $dateformat
 	);
-	wp_enqueue_script( 'dk_speakout_signaturelist_js', plugins_url( 'js/signaturelist.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ),  $dk_speakout_version );
+	wp_enqueue_script( 'dk_speakout_signaturelist_js', plugins_url( 'js/signaturelist.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ),  dk_speakout_asset_version() );
 	wp_localize_script( 'dk_speakout_signaturelist_js', 'dk_speakout_signaturelist_js', $params );
 
 	$table_html = dk_speakout_signaturelist::table( $id, 0, $rows, 'shortcode', $dateformat, $firstbuttontext, $nextbuttontext, $prevbuttontext, $lastbuttontext, $hideUnconfirmed );
@@ -66,7 +65,6 @@ global  $dk_speakout_version;
 // load CSS on pages/posts that contain the [signaturelist] shortcode
 add_filter( 'the_posts', 'dk_speakout_signaturelist_css' );
 function dk_speakout_signaturelist_css( $posts ) {
-global  $dk_speakout_version;
 	// ignore if there are no posts
 	if ( empty( $posts ) ) return $posts;
 
@@ -89,7 +87,7 @@ global  $dk_speakout_version;
 
 		 // load default theme
 		if ( $theme === 'default' ) {
-			wp_enqueue_style( 'dk_speakout_signaturelist_css', plugins_url( 'css/signaturelist.css', DK_SPEAKOUT_PLUGIN_FILE ) , array(), $dk_speakout_version);
+			wp_enqueue_style( 'dk_speakout_signaturelist_css', plugins_url( 'css/signaturelist.css', DK_SPEAKOUT_PLUGIN_FILE ) , array(), dk_speakout_asset_version() );
 		}
 		// attempt to load cusom theme (petition-signaturelist.css)
 		else {
@@ -105,16 +103,16 @@ global  $dk_speakout_version;
 
 				// use child theme if it exists
 				if ( file_exists( $child_theme_path ) ) {
-					wp_enqueue_style( 'dk_speakout_signaturelist_css', $child_theme_url, array(), $dk_speakout_version );
+					wp_enqueue_style( 'dk_speakout_signaturelist_css', $child_theme_url, array(), dk_speakout_asset_version() );
 				}
 				// else try to load style from parent theme folder
 				else {
-					wp_enqueue_style( 'dk_speakout_signaturelist_css', $parent_theme_url, array(), $dk_speakout_version );
+					wp_enqueue_style( 'dk_speakout_signaturelist_css', $parent_theme_url, array(), dk_speakout_asset_version() );
 				}
 			}
 			// if not using a child theme, just try to load style from active theme folder
 			else {
-				wp_enqueue_style( 'dk_speakout_signaturelist_css', $parent_theme_url, array(), $dk_speakout_version );
+				wp_enqueue_style( 'dk_speakout_signaturelist_css', $parent_theme_url, array(), dk_speakout_asset_version() );
 			}
 		}
 	}

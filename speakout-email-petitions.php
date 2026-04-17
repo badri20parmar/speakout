@@ -37,6 +37,20 @@ if ( ! defined( 'DK_SPEAKOUT_PLUGIN_FILE' ) ) {
 	define( 'DK_SPEAKOUT_PLUGIN_FILE', __FILE__ );
 }
 
+/**
+ * Cache-busting version for wp_enqueue_style/script. Random suffix changes every request.
+ * Keep $dk_speakout_version without this for database, migrations, and HTML comments.
+ */
+function dk_speakout_asset_version() {
+	global $dk_speakout_version;
+	static $cached = null;
+	if ( null === $cached ) {
+		$suffix = function_exists( 'wp_rand' ) ? wp_rand( 100000, 999999 ) : mt_rand( 100000, 999999 );
+		$cached = $dk_speakout_version . '.' . $suffix;
+	}
+	return $cached;
+}
+
 $db_petitions  = $wpdb->prefix . 'dk_speakout_petitions';
 $db_signatures = $wpdb->prefix . 'dk_speakout_signatures';
 
