@@ -44,9 +44,8 @@ class dk_speakout_SpeakOut
 	 */
 	public static function progress_bar( $goal, $signatures, $max_width ) {
 		// determine how wide the internal progress bar should be
-		$multiplier        = $max_width / 100;
 		$percent_complete  = ( $goal != 0 ) ? floor( ( $signatures / $goal ) * 100 ) : 0;
-		$progressbar_width = ( $percent_complete > 100 ) ? $max_width : floor( $percent_complete * $multiplier );
+		$progress_percent  = max( 0, min( 100, $percent_complete ) );
 		$progressbar       = '';
 
 		// set progress bar color via CSS class
@@ -65,8 +64,8 @@ class dk_speakout_SpeakOut
 
 		// create HTML for progress bar display
 		if ( $goal > 0 ) {
-			$progressbar = '<div class="dk-speakout-progress" style="width: ' . $max_width . 'px;">
-								<div class="dk-speakout-progressbar ' . $color_class . '" style="width: ' . $progressbar_width . 'px;"></div>
+			$progressbar = '<div class="dk-speakout-progress" style="width: min(100%, ' . absint( $max_width ) . 'px); max-width: 100%;">
+								<div class="dk-speakout-progressbar ' . $color_class . '" style="width: ' . $progress_percent . '%; max-width: 100%;"></div>
 							</div>';
 		}
 

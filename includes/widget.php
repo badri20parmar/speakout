@@ -57,7 +57,20 @@ class dk_speakout_petition_widget extends WP_Widget {
 
 			// set up AJAX callback script
 			$protocol = isset( $_SERVER['HTTPS'] ) ? 'https://' : 'http://';
-			$params   = array( 'ajaxurl' => admin_url( 'admin-ajax.php', $protocol ) );
+			$params   = array(
+				'ajaxurl'      => admin_url( 'admin-ajax.php', $protocol ),
+				'manage_nonce' => wp_create_nonce( 'dk_speakout_manage_signature' ),
+				'i18n'         => array(
+					'thanks_title'     => __( 'Thank you for signing!', 'speakout' ),
+					'update_signature' => __( 'Update signature', 'speakout' ),
+					'remove_signature' => __( 'Remove signature', 'speakout' ),
+					'change_comment'   => __( 'Change your comment', 'speakout' ),
+					'copy_link'        => __( 'Copy link', 'speakout' ),
+					'copied'           => __( 'Copied!', 'speakout' ),
+					'close'            => __( 'Close', 'speakout' ),
+					'confirm_remove'   => __( 'Remove your signature from this petition?', 'speakout' ),
+				),
+			);
 			wp_localize_script( 'dk_speakout_widget_js', 'dk_speakout_widget_js', $params );
 		}
 		
@@ -195,34 +208,67 @@ class dk_speakout_petition_widget extends WP_Widget {
             
             
     			
-			$petition_widget .='<div class="dk-speakout-widget-wrap">
+			$petition_read_title = $petition->is_editable ? $petition->open_editable_message_button : $petition->open_message_button;
+
+			$petition_widget .= '<div class="dk-speakout-widget-wrap">
+
 					<h3>' . stripslashes( esc_html( $title ) ) . '</h3>
-					<p>' . stripslashes( esc_html( $call_to_action ) ) . '</p>
-					<div class="dk-speakout-widget-button-wrap">
-						<a rel="dk-speakout-widget-popup-wrap-' . $petition->id . '" class="dk-speakout-widget-button"><span>' . $options['button_text'] . '</span></a>
-					</div>';
+
+					<p>' . stripslashes( esc_html( $call_to_action ) ) . '</p>';
+
 			if ( $options['display_count'] == 1 ) {
-			    //set goal text
-			    $goal_text = ( $petition->goal != 0 ) ? ' = ' . round(( $petition->signatures  /  $petition->goal )* 100) . '% '. __( 'of goal', 'speakout' ):'';
-			    
-				$petition_widget .= '
-					<div class="dk-speakout-widget-progress-wrap">
-                        <div class="dk-speakout-widget-signature-count">';
-                            $petition_widget .= '<span>' . number_format(  $petition->signatures, 0 , $options[ 'decimal_separator' ] , $options[ 'thousands_separator' ] ) . '</span> ' . __( 'signatures', 'speakout' ) . $goal_text;
-                            $petition_widget .= '</div>';
-						
-    			// if our goal is greater than 0 show the progress bar			
-    			if($petition->goal != 0){
-    				$petition_widget .= 
-    						'<br />0' .  dk_speakout_SpeakOut::progress_bar( $petition->goal, $petition->signatures, 150 ) . ' ' . $petition->goal;
-    			}		 
-				$petition_widget .= 
-						 '</div>';
+
+				$petition_widget .= '<div class="dk-speakout-widget-progress-wrap">';
+
+				if ( $petition->goal != 0 ) {
+
+					$sig_fmt  = number_format( $petition->signatures, 0, $options['decimal_separator'], $options['thousands_separator'] );
+
+					$goal_fmt = number_format( $petition->goal, 0, $options['decimal_separator'], $options['thousands_separator'] );
+
+					$petition_widget .= '<div class="dk-speakout-widget-signature-count dk-speakout-widget-signature-goal-line">' . sprintf(
+
+						__( '%1$s of a %2$s signature goal', 'speakout' ),
+
+						'<span>' . $sig_fmt . '</span>',
+
+						$goal_fmt
+
+					) . '</div>';
+
+					$petition_widget .= '<div class="dk-speakout-widget-count">0' . dk_speakout_SpeakOut::progress_bar( $petition->goal, $petition->signatures, 150 ) . ' ' . $goal_fmt . '</div>';
+
+				} else {
+
+					$petition_widget .= '<div class="dk-speakout-widget-signature-count"><span>' . number_format( $petition->signatures, 0, $options['decimal_separator'], $options['thousands_separator'] ) . '</span> ' . __( 'signatures', 'speakout' ) . '</div>';
+
+				}
+
+				$petition_widget .= '</div>';
+
 			}
+
+			if ( $petition->display_petition_message == 1 ) {
+
+				$read_href = dk_speakout_petition_hub_url( array( 'petition' => $petition->id ) );
+
+				$petition_widget .= '<div class="dk-speakout-widget-readmore-wrap"><a class="dk-speakout-widget-readmore" href="' . esc_url( $read_href ) . '">' . esc_html( __( $petition_read_title, 'speakout' ) ) . '</a></div>';
+
+			}
+
 			$petition_widget .= '
+
+					<div class="dk-speakout-widget-button-wrap">
+
+						<a rel="dk-speakout-widget-popup-wrap-' . $petition->id . '" class="dk-speakout-widget-button"><span>' . $options['button_text'] . '</span></a>
+
+					</div>
+
 				</div>
 
-				<div id="dk-speakout-widget-windowshade"></div>
+
+
+<div id="dk-speakout-widget-windowshade"></div>
 				<div id="dk-speakout-widget-popup-wrap-' . $petition->id . '" class="dk-speakout-widget-popup-wrap">
 					<h3>' . stripslashes( esc_html( $petition->title ) ) . '</h3>
 					<div class="dk-speakout-widget-close"></div>';
@@ -570,6 +616,7 @@ class dk_speakout_petition_widget extends WP_Widget {
 							<a class="dk-speakout-widget-facebook" href="#" title="Facebook"><span></span></a>
                             <a class="dk-speakout-email"  target="_blank" href="mailto:?subject=Petition: ' . esc_html( $petition->title ) .'&amp;body=Hi there, I want to share this petition titled %22' .esc_html( $petition->title )  . '%22 with you: https://'  .  $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] .  '" title="Share by Email"><span>&nbsp;</span></a>
 							<a class="dk-speakout-widget-x" href="#" title="x"><span></span></a>
+							<a class="dk-speakout-widget-copy-link" href="#">' . esc_html__( 'Copy link', 'speakout' ) . '</a>
 							</p>
 							<div class="dk-speakout-clear"></div>
 						</div>

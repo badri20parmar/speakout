@@ -36,6 +36,112 @@ $dk_speakout_version = '105.2.2';
 if ( ! defined( 'DK_SPEAKOUT_PLUGIN_FILE' ) ) {
 	define( 'DK_SPEAKOUT_PLUGIN_FILE', __FILE__ );
 }
+$GLOBALS['dk_speakout_plugin_file'] = __FILE__;
+
+function dk_speakout_plugin_file() {
+	return isset( $GLOBALS['dk_speakout_plugin_file'] ) ? $GLOBALS['dk_speakout_plugin_file'] : __FILE__;
+}
+
+/**
+ * Guard against stale/legacy SpeakOut handles pointing at /plugins/speakout/.
+ * Re-register known handles to the currently-running plugin folder.
+ */
+add_action( 'wp_enqueue_scripts', 'dk_speakout_force_current_plugin_asset_paths', 9999 );
+function dk_speakout_force_current_plugin_asset_paths() {
+	$base = plugins_url( '', dk_speakout_plugin_file() );
+	$ver  = dk_speakout_asset_version();
+
+	// Legacy front-end script handle seen on some sites.
+	if ( wp_script_is( 'speakout-public-js', 'enqueued' ) || wp_script_is( 'speakout-public-js', 'registered' ) ) {
+		wp_dequeue_script( 'speakout-public-js' );
+		wp_deregister_script( 'speakout-public-js' );
+		wp_register_script( 'speakout-public-js', $base . '/js/public.js', array( 'jquery' ), $ver, true );
+		wp_enqueue_script( 'speakout-public-js' );
+	}
+
+	// Main form script handle used by this build.
+	if ( wp_script_is( 'dk_speakout_js', 'enqueued' ) || wp_script_is( 'dk_speakout_js', 'registered' ) ) {
+		$deps = array( 'jquery' );
+		wp_dequeue_script( 'dk_speakout_js' );
+		wp_deregister_script( 'dk_speakout_js' );
+		wp_register_script( 'dk_speakout_js', $base . '/js/public.js', $deps, $ver, true );
+		wp_enqueue_script( 'dk_speakout_js' );
+	}
+
+	// Core petition style handle.
+	if ( wp_style_is( 'dk_speakout_css', 'enqueued' ) || wp_style_is( 'dk_speakout_css', 'registered' ) ) {
+		$options = get_option( 'dk_speakout_options' );
+		$theme   = isset( $options['petition_theme'] ) ? $options['petition_theme'] : 'basic';
+		$file    = ( $theme === 'default' ) ? 'theme-default.css' : 'theme-basic.css';
+		wp_dequeue_style( 'dk_speakout_css' );
+		wp_deregister_style( 'dk_speakout_css' );
+		wp_register_style( 'dk_speakout_css', $base . '/css/' . $file, array(), $ver );
+		wp_enqueue_style( 'dk_speakout_css' );
+	}
+
+	// Signature list style handle.
+	if ( wp_style_is( 'dk_speakout_signaturelist_css', 'enqueued' ) || wp_style_is( 'dk_speakout_signaturelist_css', 'registered' ) ) {
+		wp_dequeue_style( 'dk_speakout_signaturelist_css' );
+		wp_deregister_style( 'dk_speakout_signaturelist_css' );
+		wp_register_style( 'dk_speakout_signaturelist_css', $base . '/css/signaturelist.css', array(), $ver );
+		wp_enqueue_style( 'dk_speakout_signaturelist_css' );
+	}
+}
+
+/**
+ * Last-chance rewrite of CSS src for stale SpeakOut handles.
+ */
+add_filter( 'style_loader_src', 'dk_speakout_rewrite_style_loader_src', 9999, 2 );
+function dk_speakout_rewrite_style_loader_src( $src, $handle ) {
+	$base = plugins_url( '', dk_speakout_plugin_file() );
+	$ver  = dk_speakout_asset_version();
+
+	if ( 'dk_speakout_css' === $handle ) {
+		$options = get_option( 'dk_speakout_options' );
+		$theme   = isset( $options['petition_theme'] ) ? $options['petition_theme'] : 'basic';
+		$file    = ( 'default' === $theme ) ? 'theme-default.css' : 'theme-basic.css';
+		return add_query_arg( 'ver', rawurlencode( $ver ), $base . '/css/' . $file );
+	}
+
+	if ( 'dk_speakout_signaturelist_css' === $handle ) {
+		return add_query_arg( 'ver', rawurlencode( $ver ), $base . '/css/signaturelist.css' );
+	}
+
+	return $src;
+}
+
+/**
+ * Final safety-net for stale cached HTML chunks that still contain /plugins/speakout/.
+ * Rewrites only known SpeakOut CSS assets to this active plugin folder.
+ */
+add_action( 'template_redirect', 'dk_speakout_html_asset_path_rewrite_fallback', 0 );
+function dk_speakout_html_asset_path_rewrite_fallback() {
+	if ( is_admin() || wp_doing_ajax() || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+		return;
+	}
+
+	ob_start( 'dk_speakout_rewrite_cached_html_asset_paths' );
+}
+
+function dk_speakout_rewrite_cached_html_asset_paths( $html ) {
+	if ( ! is_string( $html ) || $html === '' ) {
+		return $html;
+	}
+
+	$active_base = untrailingslashit( plugins_url( '', dk_speakout_plugin_file() ) );
+	$old_base    = untrailingslashit( content_url( 'plugins/speakout' ) );
+
+	$replacements = array(
+		$old_base . '/css/theme-basic.css'    => $active_base . '/css/theme-basic.css',
+		$old_base . '/css/theme-default.css'  => $active_base . '/css/theme-default.css',
+		$old_base . '/css/signaturelist.css'  => $active_base . '/css/signaturelist.css',
+		'/wp-content/plugins/speakout/css/theme-basic.css'   => wp_parse_url( $active_base, PHP_URL_PATH ) . '/css/theme-basic.css',
+		'/wp-content/plugins/speakout/css/theme-default.css' => wp_parse_url( $active_base, PHP_URL_PATH ) . '/css/theme-default.css',
+		'/wp-content/plugins/speakout/css/signaturelist.css' => wp_parse_url( $active_base, PHP_URL_PATH ) . '/css/signaturelist.css',
+	);
+
+	return strtr( $html, $replacements );
+}
 
 /**
  * Cache-busting version for wp_enqueue_style/script. Random suffix changes every request.
@@ -45,7 +151,7 @@ function dk_speakout_asset_version() {
 	global $dk_speakout_version;
 	static $cached = null;
 	if ( null === $cached ) {
-		$suffix = function_exists( 'wp_rand' ) ? wp_rand( 100000, 999999 ) : mt_rand( 100000, 999999 );
+		$suffix = rand( 100000, 999999 );
 		$cached = $dk_speakout_version . '.' . $suffix;
 	}
 	return $cached;
@@ -53,6 +159,10 @@ function dk_speakout_asset_version() {
 
 $db_petitions  = $wpdb->prefix . 'dk_speakout_petitions';
 $db_signatures = $wpdb->prefix . 'dk_speakout_signatures';
+
+require_once dirname( __FILE__ ) . '/includes/petition-urls.php';
+require_once dirname( __FILE__ ) . '/includes/post-petition-meta.php';
+require_once dirname( __FILE__ ) . '/includes/elementor-bridge.php';
 
 // enable localizations
 add_action( 'init', 'dk_speakout_translate' );

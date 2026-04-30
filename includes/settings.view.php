@@ -211,6 +211,23 @@ jQuery(document).ready(function() {
 					</td>
 				</tr>
 				<tr valign="top">
+					<th scope="row"><?php _e( 'Petition hub page', 'speakout' ); ?></th>
+					<td>
+						<?php
+						wp_dropdown_pages(
+							array(
+								'name'              => 'petition_hub_page_id',
+								'id'                => 'petition_hub_page_id',
+								'show_option_none'  => __( '— Home / default —', 'speakout' ),
+								'option_none_value' => '0',
+								'selected'          => $the_settings->petition_hub_page_id,
+							)
+						);
+						?>
+						<p class="description"><?php _e( 'Page should include the [emailpetition] shortcode and [signaturemanage] for full petition and edit/remove flows. Read More links and thank-you email management links use this page.', 'speakout' ); ?></p>
+					</td>
+				</tr>
+				<tr valign="top">
 					<th scope="row"><?php _e( 'Share Message', 'speakout' ); ?></th>
 					<td><label for="share_message"><input value="<?php echo esc_attr( $the_settings->share_message ); ?>" name="share_message" id="share_message" type="text" class="regular-text"  /></label></td>
 				</tr>

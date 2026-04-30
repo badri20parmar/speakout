@@ -6,9 +6,9 @@ add_shortcode( 'signaturecount', 'dk_speakout_signaturescount_shortcode' );
 function dk_speakout_signaturescount_shortcode( $attr ) {
     include_once( 'class.petition.php' );
     $petition = new dk_speakout_Petition();
-    $id = 1; // default
-    if ( isset( $attr[ 'id' ] ) && is_numeric( $attr[ 'id' ] ) ) {
-        $id = $attr[ 'id' ];
+    $id       = dk_speakout_resolve_petition_id_from_shortcode_atts( $attr, 1 );
+    if ( ! $id ) {
+        return '';
     }
 
     $petition_exists = $petition->retrieve( $id );
@@ -40,9 +40,9 @@ function dk_speakout_signaturesgoal_shortcode( $attr ) {
     include_once( 'class.petition.php' );
     $petition = new dk_speakout_Petition();
 
-    $id = 1; // default
-    if ( isset( $attr[ 'id' ] ) && is_numeric( $attr[ 'id' ] ) ) {
-        $id = $attr[ 'id' ];
+    $id = dk_speakout_resolve_petition_id_from_shortcode_atts( $attr, 1 );
+    if ( ! $id ) {
+        return '';
     }
 
     $petition_exists = $petition->retrieve( $id );
@@ -57,19 +57,14 @@ function dk_speakout_signaturesgoal_shortcode( $attr ) {
 add_shortcode( 'petitiontitle', 'dk_speakout_petitiontitle_shortcode' );
 
 function dk_speakout_petitiontitle_shortcode( $attr ) {
-
-    // Check if we have a form preslected
-    if ( array_key_exists( 'petition', $_GET ) ) {
-        $attr[ 'id' ] = $_GET[ 'petition' ];
-    }
-
+    $attr = is_array( $attr ) ? $attr : array();
 
     include_once( 'class.petition.php' );
     $petition = new dk_speakout_Petition();
 
-    $id = 1; // default
-    if ( isset( $attr[ 'id' ] ) && is_numeric( $attr[ 'id' ] ) ) {
-        $id = $attr[ 'id' ];
+    $id = dk_speakout_resolve_petition_id_from_shortcode_atts( $attr, 1 );
+    if ( ! $id ) {
+        return '';
     }
 
     $petition_exists = $petition->retrieve( $id );
@@ -84,19 +79,14 @@ function dk_speakout_petitiontitle_shortcode( $attr ) {
 add_shortcode( 'petitionmessage', 'dk_speakout_petitionmessage_shortcode' );
 
 function dk_speakout_petitionmessage_shortcode( $attr ) {
-
-    // Check if we have a form preslected
-    if ( array_key_exists( 'petition', $_GET ) ) {
-        $attr[ 'id' ] = $_GET[ 'petition' ];
-    }
-
+    $attr = is_array( $attr ) ? $attr : array();
 
     include_once( 'class.petition.php' );
     $petition = new dk_speakout_Petition();
 
-    $id = 1; // default
-    if ( isset( $attr[ 'id' ] ) && is_numeric( $attr[ 'id' ] ) ) {
-        $id = $attr[ 'id' ];
+    $id = dk_speakout_resolve_petition_id_from_shortcode_atts( $attr, 1 );
+    if ( ! $id ) {
+        return '';
     }
 
     $petition_exists = $petition->retrieve( $id );
@@ -109,6 +99,149 @@ function dk_speakout_petitionmessage_shortcode( $attr ) {
     } else {
         return '';
     }
+}
+
+/**
+ * Enqueue SpeakOut front-end CSS/JS (for Elementor shortcodes that are not in post_content).
+ */
+function dk_speakout_enqueue_public_petition_assets() {
+    static $done = false;
+    if ( $done ) {
+        return;
+    }
+    if ( wp_style_is( 'dk_speakout_css', 'enqueued' ) || wp_style_is( 'dk_speakout_css', 'done' ) ) {
+        $done = true;
+        return;
+    }
+    $done = true;
+
+    $options = get_option( 'dk_speakout_options' );
+    $theme   = isset( $options['petition_theme'] ) ? $options['petition_theme'] : 'basic';
+
+    switch ( $theme ) {
+        case 'default':
+            wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-default.css', dk_speakout_plugin_file() ), array(), dk_speakout_asset_version() );
+            break;
+        case 'basic':
+            wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-basic.css', dk_speakout_plugin_file() ), array(), dk_speakout_asset_version() );
+            break;
+        case 'none':
+            $parent_dir                = get_template_directory_uri();
+            $parent_petition_theme_url = $parent_dir . '/petition.css';
+            if ( is_child_theme() ) {
+                $child_petition_theme_url = get_stylesheet_directory_uri() . '/petition.css';
+                $child_petition_theme_path = get_stylesheet_directory() . '/petition.css';
+                if ( file_exists( $child_petition_theme_path ) ) {
+                    wp_enqueue_style( 'dk_speakout_css', $child_petition_theme_url, array(), dk_speakout_asset_version() );
+                } else {
+                    wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), dk_speakout_asset_version() );
+                }
+            } else {
+                wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), dk_speakout_asset_version() );
+            }
+            break;
+        default:
+            wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-basic.css', dk_speakout_plugin_file() ), array(), dk_speakout_asset_version() );
+            break;
+    }
+
+    $protocol = isset( $_SERVER['HTTPS'] ) ? 'https://' : 'http://';
+    $params   = array( 'ajaxurl' => admin_url( 'admin-ajax.php', $protocol ) );
+    $params['manage_nonce'] = wp_create_nonce( 'dk_speakout_manage_signature' );
+    $params['i18n']         = array(
+        'thanks_title'     => __( 'Thank you for signing!', 'speakout' ),
+        'update_signature' => __( 'Update signature', 'speakout' ),
+        'remove_signature' => __( 'Remove signature', 'speakout' ),
+        'change_comment'   => __( 'Change your comment', 'speakout' ),
+        'copy_link'        => __( 'Copy link', 'speakout' ),
+        'copied'           => __( 'Copied!', 'speakout' ),
+        'close'            => __( 'Close', 'speakout' ),
+        'confirm_remove'   => __( 'Remove your signature from this petition?', 'speakout' ),
+    );
+    if ( isset( $options['g_recaptcha_status'] ) && $options['g_recaptcha_status'] == 'on' ) {
+        wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-gr.js', dk_speakout_plugin_file() ), array( 'jquery' ), dk_speakout_asset_version() );
+    } elseif ( isset( $options['hcaptcha_status'] ) && $options['hcaptcha_status'] == 'on' ) {
+        wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-h.js', dk_speakout_plugin_file() ), array( 'jquery' ), dk_speakout_asset_version() );
+    } else {
+        wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public.js', dk_speakout_plugin_file() ), array( 'jquery' ), dk_speakout_asset_version() );
+    }
+    wp_enqueue_script( 'jquery-effects-highlight' );
+    wp_localize_script( 'dk_speakout_js', 'dk_speakout_js', $params );
+}
+
+// Hub link for Elementor loops / excerpts (uses petition linked on the post).
+add_shortcode( 'speakout_read_more', 'dk_speakout_read_more_shortcode' );
+
+function dk_speakout_read_more_shortcode( $attr ) {
+    $attr = is_array( $attr ) ? $attr : array();
+    $text = isset( $attr['text'] ) ? $attr['text'] : __( 'Read more', 'speakout' );
+    $pid  = dk_speakout_resolve_petition_id_from_shortcode_atts( $attr, null );
+    if ( ! $pid ) {
+        return '';
+    }
+    dk_speakout_enqueue_public_petition_assets();
+    if ( ! function_exists( 'dk_speakout_petition_hub_url' ) ) {
+        return '';
+    }
+    $url     = dk_speakout_petition_hub_url( array( 'petition' => $pid ) );
+    $classes = 'dk-speakout-readme dk-speakout-readmore-loop';
+    if ( ! empty( $attr['class'] ) ) {
+        $classes .= ' ' . sanitize_text_field( $attr['class'] );
+    }
+    return '<a class="' . esc_attr( $classes ) . '" href="' . esc_url( $url ) . '"><span>' . esc_html( $text ) . '</span></a>';
+}
+
+add_shortcode( 'speakout_petition_progress', 'dk_speakout_petition_progress_shortcode' );
+
+function dk_speakout_petition_progress_shortcode( $attr ) {
+    $attr = is_array( $attr ) ? $attr : array();
+    $id   = dk_speakout_resolve_petition_id_from_shortcode_atts( $attr, 1 );
+    if ( ! $id ) {
+        return '';
+    }
+    dk_speakout_enqueue_public_petition_assets();
+    include_once( 'class.speakout.php' );
+    include_once( 'class.petition.php' );
+    $options  = get_option( 'dk_speakout_options' );
+    $petition = new dk_speakout_Petition();
+    if ( ! $petition->retrieve( $id ) ) {
+        return '';
+    }
+    if ( empty( $options['display_count'] ) || (int) $options['display_count'] !== 1 ) {
+        return '';
+    }
+    $progress_width = ( isset( $options['petition_theme'] ) && $options['petition_theme'] == 'basic' ) ? 300 : 200;
+    if ( isset( $attr['progresswidth'] ) && is_numeric( $attr['progresswidth'] ) ) {
+        $progress_width = absint( $attr['progresswidth'] );
+    }
+    $out = '<div class="dk-speakout-progress-wrap dk-speakout-progress-wrap-top dk-speakout-progress-loop">';
+    if ( $petition->goal != 0 ) {
+        $sig_fmt  = number_format( $petition->signatures, 0, $options['decimal_separator'], $options['thousands_separator'] );
+        $goal_fmt = number_format( $petition->goal, 0, $options['decimal_separator'], $options['thousands_separator'] );
+        $out     .= '<div class="dk-speakout-signature-count dk-speakout-signature-goal-line">' . sprintf(
+            /* translators: 1: current signature count, 2: signature goal */
+            __( '%1$s of a %2$s signature goal', 'speakout' ),
+            '<span>' . $sig_fmt . '</span>',
+            $goal_fmt
+        ) . '</div>';
+        $out .= '<div class="dk-speakout-count">0' . dk_speakout_SpeakOut::progress_bar( $petition->goal, $petition->signatures, $progress_width ) . ' ' . $goal_fmt . '</div>';
+    } else {
+        $out .= '<div class="dk-speakout-signature-count"><span>' . number_format( $petition->signatures, 0, $options['decimal_separator'], $options['thousands_separator'] ) . '</span> ' . __( 'signatures', 'speakout' ) . '</div>';
+    }
+    $out .= '</div>';
+    return $out;
+}
+
+add_shortcode( 'speakout_card_teaser', 'dk_speakout_card_teaser_shortcode' );
+
+function dk_speakout_card_teaser_shortcode( $attr ) {
+    $attr  = is_array( $attr ) ? $attr : array();
+    $inner = dk_speakout_petition_progress_shortcode( $attr );
+    $link  = dk_speakout_read_more_shortcode( $attr );
+    if ( $inner === '' && $link === '' ) {
+        return '';
+    }
+    return '<div class="dk-speakout-elementor-card-teaser">' . $inner . $link . '</div>';
 }
 
 // register shortcode to display petition form
@@ -254,17 +387,21 @@ function dk_speakout_emailpetition_shortcode( $attr ) {
 						<h3>' . stripslashes( esc_html( $petition->title ) ) . '</h3>';
 
                 if ( $options[ 'display_count' ] == 1 ) {
-                    $goal_text = ( $petition->goal != 0 ) ? ' = ' . round( ( $petition->signatures / $petition->goal ) * 100 ) . '% ' . __( 'of goal', 'speakout' ) : '';
-                    $petition_form .= '<div class="dk-speakout-progress-wrap dk-speakout-progress-wrap-top"><div class="dk-speakout-signature-count"><span>' . number_format( $petition->signatures, 0, $options[ 'decimal_separator' ], $options[ 'thousands_separator' ] ) . '</span> ' . __( 'signatures', 'speakout' ) . $goal_text . '</div>';
+                    $petition_form .= '<div class="dk-speakout-progress-wrap dk-speakout-progress-wrap-top">';
                     if ( $petition->goal != 0 ) {
-                        $petition_form .= '<div class="dk-speakout-count">0' . dk_speakout_SpeakOut::progress_bar( $petition->goal, $petition->signatures, $progress_width ) . ' ' . number_format( $petition->goal ) . '</div>';
+                        $sig_fmt = number_format( $petition->signatures, 0, $options['decimal_separator'], $options['thousands_separator'] );
+                        $goal_fmt = number_format( $petition->goal, 0, $options['decimal_separator'], $options['thousands_separator'] );
+                        $petition_form .= '<div class="dk-speakout-signature-count dk-speakout-signature-goal-line">' . sprintf(
+                            /* translators: 1: current signature count, 2: signature goal */
+                            __( '%1$s of a %2$s signature goal', 'speakout' ),
+                            '<span>' . $sig_fmt . '</span>',
+                            $goal_fmt
+                        ) . '</div>';
+                        $petition_form .= '<div class="dk-speakout-count">0' . dk_speakout_SpeakOut::progress_bar( $petition->goal, $petition->signatures, $progress_width ) . ' ' . $goal_fmt . '</div>';
+                    } else {
+                        $petition_form .= '<div class="dk-speakout-signature-count"><span>' . number_format( $petition->signatures, 0, $options['decimal_separator'], $options['thousands_separator'] ) . '</span> ' . __( 'signatures', 'speakout' ) . '</div>';
                     }
                     $petition_form .= '</div>';
-                }
-
-                //display petition message (or not)
-                if ( $petition->display_petition_message == 1 ) {
-                    $petition_form .= '<a id="dk-speakout-readme-' . $petition->id . '" class="dk-speakout-readme" rel="' . $petition->id . '"><span>' . __( $petitionReadTitle, 'speakout' ) . '</span></a>';
                 }
 
                 $petition_form .= '<div id="dk-speakout-form-wrap">
@@ -714,6 +851,11 @@ function dk_speakout_emailpetition_shortcode( $attr ) {
                     $petition_form .= '<p class="dk-speakout-login-hint">' . sprintf( __( 'Have an account? %s for faster signing next time.', 'speakout' ), '<a href="' . esc_url( wp_login_url( get_permalink() ) ) . '">' . __( 'Sign in', 'speakout' ) . '</a>' ) . '</p>';
                 }
 
+                if ( $petition->display_petition_message == 1 ) {
+                    $read_href = dk_speakout_petition_hub_url( array( 'petition' => $petition->id ) );
+                    $petition_form .= '<div class="dk-speakout-readme-before-submit"><a id="dk-speakout-readme-' . $petition->id . '" class="dk-speakout-readme" href="' . esc_url( $read_href ) . '"><span>' . esc_html( __( $petitionReadTitle, 'speakout' ) ) . '</span></a></div>';
+                }
+
                 $petition_form .= '
                             <div class="dk-speakout-submit-wrap">
                                 <div id="dk-speakout-ajaxloader-' . $petition->id . '" class="dk-speakout-ajaxloader" style="visibility: hidden;">&nbsp;</div>
@@ -734,7 +876,7 @@ function dk_speakout_emailpetition_shortcode( $attr ) {
                                     <a class="dk-speakout-facebook" href="#" title="Facebook" rel="' . $petition->id . '"></a>
                                     <a class="dk-speakout-email"  target="_blank" href="mailto:?subject=Petition: ' . esc_html( $petition->title ) .'&amp;body=Hi there, I want to share this petition titled %22' .esc_html( $petition->title )  . '%22 with you: https://'  .  $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"] .  '" title="Share by Email"></a>
                                     <a class="dk-speakout-x" href="#" title="X" rel="' . $petition->id . '"></a>
-                                    <a class="dk-speakout-copy-link" href="#" title="Copy link" rel="' . $petition->id . '">Copy link</a>
+                                    <a class="dk-speakout-copy-link" href="#" title="' . esc_attr__( 'Copy link', 'speakout' ) . '" rel="' . $petition->id . '">' . esc_html__( 'Copy link', 'speakout' ) . '</a>
 							     </p>
 						    </div>
 							<div class="dk-speakout-clear"></div>
@@ -793,80 +935,53 @@ function dk_speakout_signaturemanage_shortcode() {
     $html .= '<input type="email" id="dk-speakout-manage-email" placeholder="' . esc_attr__( 'Your email', 'speakout' ) . '" value="' . esc_attr( $email ) . '" />';
     $html .= '<input type="text" id="dk-speakout-manage-code" placeholder="' . esc_attr__( 'Manage code', 'speakout' ) . '" value="' . esc_attr( $code ) . '" />';
     $html .= '<textarea id="dk-speakout-manage-message" rows="5" placeholder="' . esc_attr__( 'Updated comment', 'speakout' ) . '"></textarea>';
-    $html .= '<div class="dk-speakout-signature-manage-actions"><button class="dk-speakout-manage-update">' . __( 'Update comment', 'speakout' ) . '</button> <button class="dk-speakout-manage-delete">' . __( 'Remove signature', 'speakout' ) . '</button></div>';
+    $html .= '<div class="dk-speakout-signature-manage-actions"><button type="button" class="dk-speakout-manage-update">' . esc_html__( 'Update signature', 'speakout' ) . '</button> <button type="button" class="dk-speakout-manage-delete">' . esc_html__( 'Remove signature', 'speakout' ) . '</button></div>';
     $html .= '<div class="dk-speakout-manage-response"></div></div>';
     return $html;
 }
 
-// load public CSS on pages/posts that contain the [emailpetition] shortcode
+/**
+ * Detect SpeakOut shortcodes in post body, manual excerpt, or Elementor JSON.
+ *
+ * @param WP_Post $post Post object.
+ * @return bool
+ */
+function dk_speakout_post_may_use_speakout_shortcodes( $post ) {
+    if ( ! $post instanceof WP_Post ) {
+        return false;
+    }
+    $chunks   = array( $post->post_content, $post->post_excerpt );
+    $el       = get_post_meta( $post->ID, '_elementor_data', true );
+    if ( is_string( $el ) && $el !== '' ) {
+        $chunks[] = $el;
+    }
+    $needles = array( '[emailpetition', '[signaturemanage', '[speakout_', '[signaturecount', '[signaturegoal', '[petitiontitle', '[petitionmessage' );
+    foreach ( $chunks as $chunk ) {
+        if ( ! is_string( $chunk ) || $chunk === '' ) {
+            continue;
+        }
+        foreach ( $needles as $n ) {
+            if ( strpos( $chunk, $n ) !== false ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// load public CSS/JS on pages that use SpeakOut shortcodes (including inside Elementor data).
 add_filter( 'the_posts', 'dk_speakout_public_css_js' );
 
 function dk_speakout_public_css_js( $posts ) {
-    if ( empty( $posts ) ) return $posts;
-
-    $options = get_option( 'dk_speakout_options' );
-    $shortcode_found = false;
-
-    foreach ( $posts as $post ) {
-        if ( strstr( $post->post_content, '[emailpetition' ) ) {
-            $shortcode_found = true;
-            break;
-        }
+    if ( empty( $posts ) ) {
+        return $posts;
     }
 
-    // load the CSS and JavaScript
-    if ( $shortcode_found ) {
-        $theme = $options[ 'petition_theme' ];
-
-        switch ( $theme ) {
-            case 'default':
-                wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-default.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), dk_speakout_asset_version() );
-                break;
-            case 'basic':
-                wp_enqueue_style( 'dk_speakout_css', plugins_url( 'css/theme-basic.css', DK_SPEAKOUT_PLUGIN_FILE ), array(), dk_speakout_asset_version() );
-                break;
-            case 'none':
-                $parent_dir = get_template_directory_uri();
-                $parent_petition_theme_url = $parent_dir . '/petition.css';
-
-                // if a child theme is in use
-                // attempt to load petition.css from child theme folder
-                if ( is_child_theme() ) {
-                    $child_dir = get_stylesheet_directory_uri();
-                    $child_petition_theme_url = $child_dir . '/petition.css';
-                    $child_petition_theme_path = STYLESHEETPATH . '/petition.css';
-
-                    // use child theme if it exists
-                    if ( file_exists( $child_petition_theme_path ) ) {
-                        wp_enqueue_style( 'dk_speakout_css', $child_petition_theme_url, array(), dk_speakout_asset_version() );
-                    }
-                    // else try to load style from parent theme folder
-                    else {
-                        wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), dk_speakout_asset_version() );
-                    }
-                }
-                // try to load style from active theme folder
-                else {
-                    wp_enqueue_style( 'dk_speakout_css', $parent_petition_theme_url, array(), dk_speakout_asset_version() );
-                }
-                break;
+    foreach ( $posts as $post ) {
+        if ( dk_speakout_post_may_use_speakout_shortcodes( $post ) ) {
+            dk_speakout_enqueue_public_petition_assets();
+            break;
         }
-
-        // ensure ajax callback url works on both https and http
-        $protocol = isset( $_SERVER[ 'HTTPS' ] ) ? 'https://' : 'http://';
-        $params = array( 'ajaxurl' => admin_url( 'admin-ajax.php', $protocol ) );
-        $params['manage_nonce'] = wp_create_nonce( 'dk_speakout_manage_signature' );
-        if ( isset( $options[ 'g_recaptcha_status' ] ) && $options[ 'g_recaptcha_status' ] == "on" ) {
-            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-gr.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), dk_speakout_asset_version() );
-        } 
-        elseif ( isset( $options[ 'hcaptcha_status' ] ) && $options[ 'hcaptcha_status' ] == "on" ) {
-            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public-h.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), dk_speakout_asset_version() );
-        }
-        else {
-            wp_enqueue_script( 'dk_speakout_js', plugins_url( 'js/public.js', DK_SPEAKOUT_PLUGIN_FILE ), array( 'jquery' ), dk_speakout_asset_version() );
-        }
-        wp_enqueue_script( 'jquery-effects-highlight' );
-        wp_localize_script( 'dk_speakout_js', 'dk_speakout_js', $params );
     }
 
     return $posts;

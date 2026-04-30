@@ -210,7 +210,12 @@ class dk_speakout_Mail
 		}
 		$subject = sprintf( __( 'Thanks for signing: %s', 'speakout' ), stripslashes( $petition->title ) );
 		$share_url = self::resolve_petition_share_url();
-		$manage_url = home_url( '/?dkspeakoutmanage=' . rawurlencode( $signature->confirmation_code ) . '&email=' . rawurlencode( $signature->email ) );
+		$manage_url = dk_speakout_petition_hub_url(
+			array(
+				'dkspeakoutmanage' => $signature->confirmation_code,
+				'email'            => $signature->email,
+			)
+		);
 		$message  = '<p><strong>' . esc_html__( 'Thank you for taking action.', 'speakout' ) . '</strong></p>';
 		$message .= '<p>' . esc_html__( 'Your signature has been recorded.', 'speakout' ) . '</p>';
 		$message .= '<p><a href="' . esc_url( $share_url ) . '">' . esc_html__( 'Share this petition', 'speakout' ) . '</a></p>';

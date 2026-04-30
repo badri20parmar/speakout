@@ -1,6 +1,72 @@
 jQuery( document ).ready( function( $ ) {
 	'use strict';
 
+	function dkSpeakoutWidgetThanksModal( messageHtml, manageCode, email, initialComment ) {
+		var js = dk_speakout_widget_js, i = js.i18n || {};
+		$( '.dk-speakout-thanks-overlay' ).remove();
+		var $ov = $( '<div class="dk-speakout-thanks-overlay"></div>' );
+		var $modal = $( '<div class="dk-speakout-thanks-modal"></div>' );
+		var $close = $( '<button type="button" class="dk-speakout-thanks-close" aria-label="close"></button>' ).html( '&times;' );
+		if ( i.close ) {
+			$close.attr( 'aria-label', i.close );
+		}
+		var $title = $( '<h3 class="dk-speakout-thanks-title"></h3>' ).text( i.thanks_title || 'Thank you for signing!' );
+		var $body = $( '<div class="dk-speakout-thanks-body"></div>' ).html( messageHtml );
+		$modal.append( $close ).append( $title ).append( $body );
+		if ( manageCode && email ) {
+			var $ta = $( '<textarea class="dk-speakout-thanks-comment" rows="5"></textarea>' ).attr( 'placeholder', i.change_comment || '' ).val( initialComment || '' );
+			var $actions = $( '<div class="dk-speakout-thanks-actions"></div>' );
+			var $up = $( '<button type="button" class="button-update dk-speakout-thanks-update"></button>' ).text( i.update_signature || 'Update signature' );
+			var $rm = $( '<button type="button" class="button-remove dk-speakout-thanks-remove"></button>' ).text( i.remove_signature || 'Remove signature' );
+			var $fb = $( '<div class="dk-speakout-thanks-feedback"></div>' );
+			$actions.append( $up ).append( $rm );
+			$modal.append( $ta ).append( $actions ).append( $fb );
+			$ov.data( 'manageCode', manageCode ).data( 'email', email );
+			$up.on( 'click', function() {
+				$.post( js.ajaxurl, {
+					action: 'dk_speakout_manage_signature',
+					nonce: js.manage_nonce,
+					manage_action: 'update',
+					email: $ov.data( 'email' ),
+					code: $ov.data( 'manageCode' ),
+					custom_message: $ta.val()
+				}, function( res ) {
+					$fb.html( res.message );
+				}, 'json' );
+			} );
+			$rm.on( 'click', function() {
+				if ( ! window.confirm( i.confirm_remove || 'Remove your signature?' ) ) {
+					return;
+				}
+				$.post( js.ajaxurl, {
+					action: 'dk_speakout_manage_signature',
+					nonce: js.manage_nonce,
+					manage_action: 'delete',
+					email: $ov.data( 'email' ),
+					code: $ov.data( 'manageCode' ),
+					custom_message: ''
+				}, function( res ) {
+					$fb.html( res.message );
+					if ( res.status === 'success' ) {
+						setTimeout( function() {
+							$ov.remove();
+						}, 1800 );
+					}
+				}, 'json' );
+			} );
+		}
+		$close.on( 'click', function() {
+			$ov.remove();
+		} );
+		$ov.on( 'click', function( e ) {
+			if ( e.target === $ov[0] ) {
+				$ov.remove();
+			}
+		} );
+		$ov.append( $modal );
+		$( 'body' ).append( $ov );
+	}
+
 	// display required asteriscs
 	$( '.dk-speakout-widget-popup-wrap label.required' ).append('<span> *</span>');
 
@@ -158,8 +224,14 @@ jQuery( document ).ready( function( $ ) {
 						}
 						$( '#dk-speakout-widget-popup-wrap-' + id + ' .dk-speakout-widget-form' ).hide();
 						$( '.dk-speakout-widget-response' ).addClass( response_class );
-						$( '#dk-speakout-widget-popup-wrap-' + id + ' .dk-speakout-widget-response' ).fadeIn().html( response.message );
+						if ( response.status !== 'error' && response.manage_code && email ) {
+							$( '#dk-speakout-widget-popup-wrap-' + id + ' .dk-speakout-widget-response' ).hide().empty();
+							dkSpeakoutWidgetThanksModal( response.message, response.manage_code, email, custom_message );
+						} else {
+							$( '#dk-speakout-widget-popup-wrap-' + id + ' .dk-speakout-widget-response' ).fadeIn().html( response.message );
+						}
 						$( '#dk-speakout-widget-popup-wrap-' + id + ' .dk-speakout-widget-share' ).fadeIn();
+						ajaxloader.css( { 'visibility' : 'hidden' } );
 
 						// launch Facebook sharing window
 						$( '.dk-speakout-widget-facebook' ).click( function() {
@@ -170,8 +242,23 @@ jQuery( document ).ready( function( $ ) {
 						$( '.dk-speakout-widget-x' ).click( function() {
 							var url = 'http://x.com/share?url=' + share_url + '&text=' + tweet;
 							window.open( url, 'x', 'height=420,width=550,left=100,top=100,resizable=yes,location=no,status=no,toolbar=no' );
-							ajaxloader.css({ 'visibility' : 'hidden'});
 						});
+						$( '.dk-speakout-widget-copy-link' ).off( 'click.dkcopy' ).on( 'click.dkcopy', function( e ) {
+							e.preventDefault();
+							var url = shareUrlForEmail.split( '#' )[0],
+								$a = $( this ),
+								i = dk_speakout_widget_js.i18n || {},
+								copyLabel = i.copy_link || 'Copy link',
+								copiedLabel = i.copied || 'Copied!';
+							if ( navigator.clipboard && navigator.clipboard.writeText ) {
+								navigator.clipboard.writeText( url ).then( function() {
+									$a.text( copiedLabel );
+									setTimeout( function() {
+										$a.text( copyLabel );
+									}, 2000 );
+								} );
+							}
+						} );
 					}, 'json'
 				);
 			}

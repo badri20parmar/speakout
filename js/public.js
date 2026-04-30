@@ -303,10 +303,12 @@ jQuery( document ).ready( function( $ ) {
 					    $( '#dk-speakout-petition-' + id + ' .dk-speakout-petition' ).hide();
 					}
 					$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).addClass( response_class );
-                    if ( response.status !== 'error' && response.manage_code && email ) {
-                        response.message += '<p><a href="/?dkspeakoutmanage=' + encodeURIComponent(response.manage_code) + '&email=' + encodeURIComponent(email) + '">Manage your signature</a></p>';
-                    }
-					$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).fadeIn().html( response.message );
+					if ( response.status !== 'error' && response.manage_code && email && hide_email_field === '0' ) {
+						$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).hide().empty();
+						dkSpeakoutOpenThanksModal( response.message, response.manage_code, email, custom_message );
+					} else {
+						$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).fadeIn().html( response.message );
+					}
 					ajaxloader.css({ 'visibility' : 'hidden'});
                 
                 	// advance the total but only if confirmation not required and response status has no error
@@ -347,99 +349,21 @@ jQuery( document ).ready( function( $ ) {
 		window.open( x_url, 'x', 'height=400,width=550,left=100,top=100,resizable=yes,location=no,status=no,toolbar=no' );
 	});
 
-	$( '.dk-speakout-copy-link' ).click( function( e ) {
+	$( document ).on( 'click', '.dk-speakout-copy-link', function( e ) {
 		e.preventDefault();
-		var url = window.location.href.split('#')[0];
+		var url = window.location.href.split( '#' )[0],
+			$a = $( this ),
+			i = dk_speakout_js.i18n || {},
+			copyLabel = i.copy_link || 'Copy link',
+			copiedLabel = i.copied || 'Copied!';
 		if ( navigator.clipboard && navigator.clipboard.writeText ) {
-			navigator.clipboard.writeText( url );
-			$( this ).text( 'Copied!' );
+			navigator.clipboard.writeText( url ).then( function() {
+				$a.text( copiedLabel );
+				setTimeout( function() {
+					$a.text( copyLabel );
+				}, 2000 );
+			} );
 		}
-	});
-
-/*
--------------------------------
-	Petition reader popup
--------------------------------
- */
-	$('a.dk-speakout-readme').click( function( e ) {
-		e.preventDefault();
-
-		var id = $( this ).attr( 'rel' ),
-			sourceOffset = $(this).offset(),
-			sourceTop    = sourceOffset.top - $(window).scrollTop(),
-			sourceLeft   = sourceOffset.left - $(window).scrollLeft(),
-			screenHeight = $( document ).height(),
-			screenWidth  = $( window ).width(),
-			windowHeight = $( window ).height(),
-			windowWidth  = $( window ).width(),
-			readerHeight = 520,
-			readerWidth  = 640,
-			readerTop    = ( ( windowHeight / 2 ) - ( readerHeight / 2 ) ),
-			readerLeft   = ( ( windowWidth / 2 ) - ( readerWidth / 2 ) ),
-			petitionText = $( 'div#dk-speakout-message-' + id ).html(),
-			reader       = '<div id="dk-speakout-reader"><div id="dk-speakout-reader-close"></div><div id="dk-speakout-reader-content"></div></div>';
-
-		// set this to toggle use of .val() / .text() so that Firefox  will read from editable-message textarea as expected
-		$( '#dk-speakout-textval-' + id ).val('text');
-
-		// use textarea for editable petition messages
-		if ( petitionText === undefined ) {
-			petitionText = $( '#dk-speakout-message-editable-' + id ).html();
-		}
-
-		$( '#dk-speakout-windowshade' ).css( {
-				'width'  : screenWidth,
-				'height' : screenHeight
-			});
-			$( '#dk-speakout-windowshade' ).fadeTo( 500, 0.8 );
-
-		if ( $( '#dk-speakout-reader' ).length > 0 ) {
-			$( '#dk-speakout-reader' ).remove();
-		}
-
-		$( 'body' ).append( reader );
-
-		$('#dk-speakout-reader').css({
-			position   : 'fixed',
-			left       : sourceLeft,
-			top        : sourceTop,
-			zIndex     : 100002
-		});
-
-		$('#dk-speakout-reader').animate({
-			width  : readerWidth,
-			height : readerHeight,
-			top    : readerTop,
-			left   : readerLeft
-		}, 500, function() {
-			$( '#dk-speakout-reader-content' ).html( petitionText );
-		});
-
-		/* Close the pop-up petition reader */
-		// by clicking windowshade area
-		$( '#dk-speakout-windowshade' ).click( function () {
-			$( this ).fadeOut( 'slow' );
-			// write edited text to form - using .text() because target textarea has display: none
-			$( '.dk-speakout-message-' + id ).text( $( '#dk-speakout-reader textarea' ).val() );
-			$( '#dk-speakout-reader' ).remove();
-		});
-		// or by clicking the close button
-		$( 'body' ).on( 'click', '#dk-speakout-reader-close', function() {
-			$( '#dk-speakout-windowshade' ).fadeOut( 'slow' );
-			// write edited text to form - using .text() because target textarea has display: none
-			$( '.dk-speakout-message-' + id ).text( $( '#dk-speakout-reader textarea' ).val() );
-			$( '#dk-speakout-reader' ).remove();
-		});
-		// or by pressing ESC
-		$( document ).keyup( function( e ) {
-			if ( e.keyCode === 27 ) {
-				$( '#dk-speakout-windowshade' ).fadeOut( 'slow' );
-				// write edited text to form - using .text() because target textarea has display: none
-				$( '.dk-speakout-message-' + id ).text( $( '#dk-speakout-reader textarea' ).val() );
-				$( '#dk-speakout-reader' ).remove();
-			}
-		});
-
 	});
 
 /*
@@ -472,6 +396,72 @@ jQuery( document ).ready( function( $ ) {
 		}
 	});
 
+	function dkSpeakoutOpenThanksModal( messageHtml, manageCode, email, initialComment ) {
+		var i = dk_speakout_js.i18n || {};
+		$( '.dk-speakout-thanks-overlay' ).remove();
+		var $ov = $( '<div class="dk-speakout-thanks-overlay"></div>' );
+		var $modal = $( '<div class="dk-speakout-thanks-modal"></div>' );
+		var $close = $( '<button type="button" class="dk-speakout-thanks-close" aria-label="close"></button>' ).html( '&times;' );
+		if ( i.close ) {
+			$close.attr( 'aria-label', i.close );
+		}
+		var $title = $( '<h3 class="dk-speakout-thanks-title"></h3>' ).text( i.thanks_title || 'Thank you for signing!' );
+		var $body = $( '<div class="dk-speakout-thanks-body"></div>' ).html( messageHtml );
+		$modal.append( $close ).append( $title ).append( $body );
+		if ( manageCode && email ) {
+			var $ta = $( '<textarea class="dk-speakout-thanks-comment" rows="5"></textarea>' ).attr( 'placeholder', i.change_comment || '' ).val( initialComment || '' );
+			var $actions = $( '<div class="dk-speakout-thanks-actions"></div>' );
+			var $up = $( '<button type="button" class="button-update dk-speakout-thanks-update"></button>' ).text( i.update_signature || 'Update signature' );
+			var $rm = $( '<button type="button" class="button-remove dk-speakout-thanks-remove"></button>' ).text( i.remove_signature || 'Remove signature' );
+			var $fb = $( '<div class="dk-speakout-thanks-feedback"></div>' );
+			$actions.append( $up ).append( $rm );
+			$modal.append( $ta ).append( $actions ).append( $fb );
+			$ov.data( 'manageCode', manageCode ).data( 'email', email );
+			$up.on( 'click', function() {
+				$.post( dk_speakout_js.ajaxurl, {
+					action: 'dk_speakout_manage_signature',
+					nonce: dk_speakout_js.manage_nonce,
+					manage_action: 'update',
+					email: $ov.data( 'email' ),
+					code: $ov.data( 'manageCode' ),
+					custom_message: $ta.val()
+				}, function( res ) {
+					$fb.html( res.message );
+				}, 'json' );
+			} );
+			$rm.on( 'click', function() {
+				if ( ! window.confirm( i.confirm_remove || 'Remove your signature?' ) ) {
+					return;
+				}
+				$.post( dk_speakout_js.ajaxurl, {
+					action: 'dk_speakout_manage_signature',
+					nonce: dk_speakout_js.manage_nonce,
+					manage_action: 'delete',
+					email: $ov.data( 'email' ),
+					code: $ov.data( 'manageCode' ),
+					custom_message: ''
+				}, function( res ) {
+					$fb.html( res.message );
+					if ( res.status === 'success' ) {
+						setTimeout( function() {
+							$ov.remove();
+						}, 1800 );
+					}
+				}, 'json' );
+			} );
+		}
+		$close.on( 'click', function() {
+			$ov.remove();
+		} );
+		$ov.on( 'click', function( e ) {
+			if ( e.target === $ov[0] ) {
+				$ov.remove();
+			}
+		} );
+		$ov.append( $modal );
+		$( 'body' ).append( $ov );
+	}
+
     function manageSignature(action) {
         var data = {
             action: 'dk_speakout_manage_signature',
@@ -482,7 +472,7 @@ jQuery( document ).ready( function( $ ) {
             custom_message: $('#dk-speakout-manage-message').val()
         };
         $.post(dk_speakout_js.ajaxurl, data, function(response){
-            $('.dk-speakout-manage-response').text(response.message);
+            $('.dk-speakout-manage-response').html(response.message);
         }, 'json');
     }
 

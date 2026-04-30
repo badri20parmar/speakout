@@ -258,7 +258,8 @@ function dk_speakout_install() {
         "anedot_embed_pref" => "",
         "anedot_iframe_width" => "",
         "anedot_iframe_height" => "",
-        "webhooks" => "off"
+        "webhooks" => "off",
+        "petition_hub_page_id" => 0
 
     );
 
@@ -537,6 +538,9 @@ function dk_speakout_update() {
         }
         if ( !array_key_exists( 'signaturelist_display', $options ) ) {
             $options[ 'signaturelist_display' ] = "table";
+        }
+        if ( ! array_key_exists( 'petition_hub_page_id', $options ) ) {
+            $options['petition_hub_page_id'] = 0;
         }
         update_option( 'dk_speakout_options', $options );
     }

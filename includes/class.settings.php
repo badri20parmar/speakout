@@ -86,6 +86,7 @@ class dk_speakout_Settings
     public $sigtab_display_time;
     public $sigtab_IP_address;
     public $webhooks = "off";
+	public $petition_hub_page_id = 0;
 
 	/**
 	 * Retrieves the plugin options and populates this object
@@ -160,6 +161,7 @@ class dk_speakout_Settings
         $this->sigtab_display_time          = $options['sigtab_display_time'];
         $this->sigtab_IP_address            = $options['sigtab_IP_address'];
         $this->webhooks                     = $options['webhooks'];
+		$this->petition_hub_page_id         = isset( $options['petition_hub_page_id'] ) ? absint( $options['petition_hub_page_id'] ) : 0;
     
 		$this->_read_signaturelist_columns();
 	}
@@ -240,6 +242,7 @@ class dk_speakout_Settings
             'sigtab_display_time'       => $this->sigtab_display_time,
             'sigtab_IP_address'         => $this->sigtab_IP_address,
             'webhooks'                  => $this->webhooks,
+			'petition_hub_page_id'      => $this->petition_hub_page_id,
 		);
 
 		update_option( 'dk_speakout_options', $options );
@@ -353,6 +356,7 @@ class dk_speakout_Settings
         $this->sigtab_display_time       = sanitize_text_field( $_POST['sigtab_display_time'] );
         $this->sigtab_IP_address         = sanitize_text_field( $_POST['sigtab_IP_address'] );
         $this->webhooks                  = $_POST['webhooks'] ;
+		$this->petition_hub_page_id     = isset( $_POST['petition_hub_page_id'] ) ? absint( $_POST['petition_hub_page_id'] ) : 0;
         	}
 	
 	/**

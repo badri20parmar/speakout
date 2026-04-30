@@ -7,6 +7,17 @@
         <?php  echo  $table_label;  // allowed_html_tags(); echo wp_kses($table_label ,$allowed_tags ); ?>
         </span></h2>
     <?php if ( $message_update ) echo '<div id="message" class="updated"><p>' . esc_html( $message_update ) . '</p></div>' ?>
+    <?php
+    if ( ! empty( $csv_url ) ) {
+        $dk_speakout_csv_quick = wp_nonce_url( $csv_url . '&csv=signatures', 'dk_speakout-download_signatures' );
+        ?>
+    <div class="dk-speakout-csv-quick" style="margin: 12px 0 8px;">
+        <a class="button button-primary" href="<?php echo esc_url( $dk_speakout_csv_quick ); ?>"><?php esc_html_e( 'Download all signatures (CSV)', 'speakout' ); ?></a>
+        <span class="description" style="margin-left: 10px; vertical-align: middle;"><?php esc_html_e( 'Exports every row for the selected petition. Use date and status filters with Apply below for a narrower export.', 'speakout' ); ?></span>
+    </div>
+        <?php
+    }
+    ?>
     <div class="tablenav">
         <div class="dk_speakout_clear">
             <div class="alignleft">
@@ -113,8 +124,8 @@
                         <option value="-1">
                         <?php _e("Choose signatures action", "speakout"); ?>
                         </option>
-                        <option value="csv-download" <?php echo esc_html( $option_disabled ); ?>>
-                        <?php _e( "Download CSV - see settings/admin sig list", "speakout") .  __( $option_notice, "speakout") ; ?>
+                        <option value="csv-download" <?php echo $option_disabled; ?>>
+                        <?php echo esc_html( __( 'Download CSV (export)', 'speakout' ) . $option_notice ); ?>
                         </option>
                         <option value="display-unconfirmed" <?php echo esc_html( $option_disabled ); ?>>
                         <?php _e("Display only unconfirmed", "speakout") . __( $option_notice, "speakout") ; ?>

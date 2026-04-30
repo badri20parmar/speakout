@@ -69,6 +69,61 @@ sub/* any custom changes should be made in the theme custom CSS. */
   line-height: 32px;
   padding-left: 26px;
 }
+/* Read more link placed above submit (shortcode) */
+.dk-speakout-readme-before-submit {
+  margin: 0.75em auto 0.5em;
+  max-width: 90%;
+  text-align: center;
+}
+.dk-speakout-readme-before-submit.dk-speakout-readme {
+  display: inline-block !important;
+}
+.dk-speakout-elementor-card-teaser {
+  /* margin: 0.5rem auto 0.75rem; */
+  max-width: 100%;
+  text-align: center;
+}
+.dk-speakout-elementor-card-teaser .dk-speakout-progress-loop {
+  margin-bottom: 0.35rem;
+}
+.dk-speakout-readmore-loop {
+  display: inline-block !important;
+  margin: 0.25rem auto 0;
+}
+.elementor-post .dk-speakout-readmore-loop,
+.elementor-post .dk-speakout-elementor-card-teaser .dk-speakout-readmore-loop {
+  align-items: center !important;
+  background: #ff3b3b !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: #fff !important;
+  display: inline-flex !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  justify-content: center !important;
+  line-height: 1.15 !important;
+  margin: 0.35rem auto 0.9rem !important;
+  min-height: 40px;
+  min-width: 160px;
+  opacity: 1 !important;
+  padding: 0.58rem 1.5rem !important;
+  position: relative;
+  text-decoration: none !important;
+  text-transform: none !important;
+  visibility: visible !important;
+  z-index: 2;
+}
+.elementor-post .dk-speakout-readmore-loop:hover,
+.elementor-post .dk-speakout-readmore-loop:focus {
+  color: #fff !important;
+  filter: brightness(1.06);
+}
+.elementor-post .dk-speakout-readmore-loop span {
+  background: none !important;
+  color: inherit !important;
+  line-height: inherit !important;
+  padding: 0 !important;
+}
 /* Petion reader popup */
 #dk-speakout-reader {
   background: #fff;

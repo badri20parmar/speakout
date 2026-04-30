@@ -36,7 +36,9 @@
 			<?php                 $edit_url = esc_url( wp_nonce_url( site_url() . '/wp-admin/admin.php?page=dk_speakout_addnew&action=edit&id=' . $petition->id, 'dk_speakout-edit_petition' . $petition->id ) );                
 			$delete_url     = esc_url( wp_nonce_url( site_url() . '/wp-admin/admin.php?page=dk_speakout_top&action=delete&id=' . $petition->id, 'dk_speakout-delete_petition' . $petition->id ) );
 			$duplicate_url = esc_url( wp_nonce_url( site_url() . '/wp-admin/admin.php?page=dk_speakout_addnew&action=duplicate&id=' . $petition->id, 'dk_speakout-edit_petition' . $petition->id ) );
-			$signatures_url = esc_url( site_url() . '/wp-admin/admin.php?page=dk_speakout_signatures&action=petition&pid=' . $petition->id );  ?>			
+			$signatures_url = esc_url( site_url() . '/wp-admin/admin.php?page=dk_speakout_signatures&action=petition&pid=' . $petition->id );
+			$csv_download_url = esc_url( wp_nonce_url( admin_url( 'admin.php?page=dk_speakout_signatures&action=petition&pid=' . $petition->id . '&csv=signatures' ), 'dk_speakout-download_signatures' ) );
+			?>			
 			<tr class="dk-speakout-tablerow">				
 				<td><a class="row-title" href="<?php echo $edit_url; ?>"><?php echo stripslashes( esc_html( $petition->id ) ); ?></a></td>				
 				<td><a class="row-title" href="<?php echo $edit_url; ?>"><?php echo stripslashes( esc_html( $petition->title ) ); ?></a>
@@ -60,7 +62,10 @@
 					<div class="dk_speakout_clear"></div>
 					<?php echo dk_speakout_SpeakOut::progress_bar( $petition->goal, $petition->signatures, 65 ); ?>				
 				</td>				
-				<td class="dk-speakout-right" style="vertical-align: middle"><a class="button" href="<?php echo $signatures_url; ?>"><?php _e( 'View Signatures', 'speakout' ); ?></a></td>			
+				<td class="dk-speakout-right" style="vertical-align: middle; white-space: nowrap;">
+					<a class="button button-primary" href="<?php echo $csv_download_url; ?>"><?php esc_html_e( 'Download CSV', 'speakout' ); ?></a>
+					<a class="button" href="<?php echo $signatures_url; ?>"><?php esc_html_e( 'View Signatures', 'speakout' ); ?></a>
+				</td>			
 			</tr>		
 			<?php endforeach; ?>		
 		</tbody>	

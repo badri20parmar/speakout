@@ -457,3 +457,110 @@ a.dk-speakout-email:active {
 #dk-speakout-recaptcha, #dk-speakout-hcaptcha{
 	margin: 0 4% 0 5%;
 }
+.dk-speakout-widget-readmore-wrap {
+  margin: 0.65em 0;
+  text-align: center;
+}
+.dk-speakout-widget-readmore {
+  background: #c62828;
+  border-radius: 999px;
+  color: #fff !important;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  padding: 0.45em 1.35em;
+  text-decoration: none !important;
+  text-transform: uppercase;
+}
+.dk-speakout-widget-signature-goal-line span {
+  font-weight: bold;
+}
+.dk-speakout-widget-copy-link {
+  display: inline-block;
+  font-size: 0.85em;
+  font-weight: 600;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.dk-speakout-thanks-overlay {
+  background: rgba(0, 0, 0, 0.45);
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  padding: 2rem 1rem;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 100050;
+}
+.dk-speakout-thanks-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+  max-width: 440px;
+  padding: 1.35rem 1.5rem 1.5rem;
+  position: relative;
+}
+.dk-speakout-thanks-close {
+  background: transparent;
+  border: 0;
+  color: #888;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  position: absolute;
+  right: 0.5rem;
+  top: 0.45rem;
+}
+.dk-speakout-thanks-title {
+  color: #1a237e;
+  font-size: 1.25rem;
+  margin: 0 1.5rem 0.75rem 0;
+  text-align: center;
+}
+.dk-speakout-thanks-body {
+  font-size: 0.95rem;
+  margin-bottom: 0.85rem;
+}
+.dk-speakout-thanks-comment {
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  min-height: 100px;
+  padding: 0.5rem 0.65rem;
+  width: 100%;
+}
+.dk-speakout-thanks-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+}
+.dk-speakout-thanks-actions .button-update {
+  background: #26a69a;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.55em 1.35em;
+}
+.dk-speakout-thanks-actions .button-remove {
+  background: #e53935;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.55em 1.35em;
+}
+.dk-speakout-thanks-feedback {
+  font-size: 0.9rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
