@@ -275,26 +275,6 @@ jQuery( document ).ready( function( $ ) {
 					if ( response.status === 'error' ) {
 						response_class = 'dk-speakout-response-error';
 					}
-					//if successfully signed and there is a redirect URL in the form
-					if (response.status !== 'error' && redirect_url > ""){
-					   	setTimeout(function () {
-							//are we opening in a new window?
-					   	    if(url_target == 0){
-							   window.location.href = redirect_url;
-					   	    }
-					   	    else{
-					   	            //this triggers blockup blockers :P
-					   	            var redirectWindow = window.open(redirect_url, '_blank');
-                                    $.ajax({
-                                        type: 'POST',
-                                        url: '/echo/json/',
-                                        success: function (data) {
-                                            redirectWindow.location;
-                                        }
-                                    });
-					   	    }
-						}, redirect_delay); //delay redirection by n milliseconds e.g. 5000 = 5 seconds
-					}
 					if(petition_fade=='enabled'){
 					    $( '#dk-speakout-petition-' + id + ' .dk-speakout-petition' ).fadeTo( 400, 0.35 );
 					}
@@ -304,7 +284,7 @@ jQuery( document ).ready( function( $ ) {
 					$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).addClass( response_class );
 					if ( response.status !== 'error' && response.manage_code && email && hide_email_field === '0' ) {
 						$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).hide().empty();
-						dkSpeakoutOpenThanksModal( response.message, response.manage_code, email, custom_message );
+						dkSpeakoutOpenThanksModal( response.message, response.manage_code, email, custom_message, redirect_url, url_target );
 					} else {
 						$( '#dk-speakout-petition-' + id + ' .dk-speakout-response' ).fadeIn().html( response.message );
 					}
@@ -395,7 +375,7 @@ jQuery( document ).ready( function( $ ) {
 		}
 	});
 
-	function dkSpeakoutOpenThanksModal( messageHtml, manageCode, email, initialComment ) {
+	function dkSpeakoutOpenThanksModal( messageHtml, manageCode, email, initialComment, redirectUrl, urlTarget ) {
 		var i = dk_speakout_js.i18n || {};
 		$( '.dk-speakout-thanks-overlay' ).remove();
 		var $ov = $( '<div class="dk-speakout-thanks-overlay"></div>' );
@@ -407,6 +387,19 @@ jQuery( document ).ready( function( $ ) {
 		var $title = $( '<h3 class="dk-speakout-thanks-title"></h3>' ).text( i.thanks_title || 'Thank you for signing!' );
 		var $body = $( '<div class="dk-speakout-thanks-body"></div>' ).html( messageHtml );
 		$modal.append( $close ).append( $title ).append( $body );
+		if ( redirectUrl ) {
+			var $donateWrap = $( '<div class="dk-speakout-thanks-actions"></div>' );
+			var $donate = $( '<button type="button" class="button dk-speakout-thanks-donate"></button>' ).text( i.donate_now || 'Donate now' );
+			$donate.on( 'click', function() {
+				if ( String( urlTarget ) === '1' ) {
+					window.open( redirectUrl, '_blank' );
+					return;
+				}
+				window.location.href = redirectUrl;
+			} );
+			$donateWrap.append( $donate );
+			$modal.append( $donateWrap );
+		}
 		if ( manageCode && email ) {
 			var $ta = $( '<textarea class="dk-speakout-thanks-comment" rows="5"></textarea>' ).attr( 'placeholder', i.change_comment || '' ).val( initialComment || '' );
 			var $actions = $( '<div class="dk-speakout-thanks-actions"></div>' );
